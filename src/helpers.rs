@@ -72,7 +72,6 @@ pub fn add_fighter(fighter: &FighterInfo) {
     unsafe {
         tables::FIGHTER_COUNT_REFS.set_count(tables::FIGHTER_NAMES.table.len() as u16 + 1);
         tables::FIGHTER_COUNT_REFS_0X75.set_count(tables::FIGHTER_NAMES.table.len() as u16);
-        
         tables::FIGHTER_KIND_PARAM_ACCESSOR_COUNT_REFS.set_count(tables::FIGHTER_KIND_TABLE_2.table.len() as u16);
         tables::FIGHTER_VTABLES.patch();
     }
