@@ -82,7 +82,7 @@ pub fn main() {
 
         
     add_fighter(&helpers::FighterInfo { 
-        fighter_name: String::from("roy"), 
+        fighter_name: String::from("roy"), // set to Roy so it loads stuff from Roy's directories, but just change the name for new fighter
         fighter_kind: 0x11324a5d7f // FIGHTER_KIND_ADOL
     });
         
