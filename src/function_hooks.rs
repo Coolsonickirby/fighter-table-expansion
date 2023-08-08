@@ -1,10 +1,6 @@
-use skyline::{hook, hooks::InlineCtx, install_hooks};
+use skyline::{hook, install_hooks};
 
-use smash::{
-    app::{BattleObject, BattleObjectModuleAccessor},
-    hash40, lua_State,
-    phx::Hash40,
-};
+
 
 use crate::offsets;
 use crate::tables;
@@ -35,8 +31,7 @@ mod create_agent_fighter {
     use skyline::hooks::Region;
     use skyline::install_hooks;
     use smash::{
-        app::{BattleObject, BattleObjectModuleAccessor},
-        hash40, lua_State,
+        app::{BattleObject, BattleObjectModuleAccessor}, lua_State,
         phx::Hash40,
     };
 

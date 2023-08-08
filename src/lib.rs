@@ -34,6 +34,7 @@ use helpers::add_fighter;
 use skyline::hooks::{Region, getRegionAddress};
 use structs::FighterDAT;
 
+mod fpa2;
 mod cpu;
 mod refs;
 mod table;
