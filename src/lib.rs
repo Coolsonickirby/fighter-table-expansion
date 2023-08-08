@@ -1,4 +1,5 @@
 #![feature(array_windows)]
+#![feature(pointer_byte_offsets)]
 /* to-do (in no particular order) (percentages are just a rough estimation (also they look cool)):
  * - look into 0x6079b0
  * 
@@ -18,6 +19,7 @@
  *      - Expand the FIGHTER_ID_BY_ARTICLE_IDX (100%)                            (uses u32RelocatedTable)
  *      - Expand the FIGHTER_VTABLES           (100%)            (need to implement VtableRelocatedTable)
  *      - Expand the FighterParamAccessor2       (0%)                    (being a major pita rn tbh lmao)
+ *          - Expand the inner fighter_entries array: two approaches, both suck
  * - Hook functions that look up fighter stuff and expand (10%?)
  *      - Expanded the fighter_kind -> id lookup (100%)
  *      - some other functions that I do not know about(?)

@@ -97,6 +97,15 @@ impl LdrImmediate {
 
         Self::MASKED | size | imm9 | rn | rt
     }
+
+    pub fn decode(instruction: u32) -> Self {
+        let is_64_bit = (instruction & 1) != 0;
+        let imm9 = ((instruction >> 12) & 0x1FF) as u16;
+        let rn = ((instruction >> 5) & 0x1F) as u8;
+        let rt = (instruction & 0x1F) as u8;
+
+        Self { imm9, rn, rt, is_64_bit }
+    }
 }
 
 pub struct CmpImmediate {
