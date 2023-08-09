@@ -1,12 +1,13 @@
 use skyline::{self, hook, hooks::{InlineCtx, getRegionAddress, Region}, patching::{Patch, sky_memcpy}, install_hooks};
-use smash::{app::{FighterParamAccessor2, FighterParamAccessor2Entry}, cpp};
+use smash::{app::*, cpp};
 
 use crate::cpu;
 
 #[repr(C)]
 pub struct FighterParamAccessor2Ex {
     pub original: FighterParamAccessor2, // 0x19a8
-    pub relocated_entries: [FighterParamAccessor2Entry; 255],
+    pub relocated_entries: [FPA2Entry; 255],
+    pub relocated_entries_2: [FPA2Entry2; 255],
 }
 
 #[hook(offset = 0x70c33c)]
@@ -25,15 +26,17 @@ pub unsafe fn destroy_entries2(ctx: &mut InlineCtx) {
 pub unsafe fn init_entries(ctx: &mut InlineCtx) {
     let table = *ctx.registers[20].x.as_ref() as *mut FighterParamAccessor2Ex;
     for entry in (*table).relocated_entries.iter_mut() {
-        entry.unk3 = 0;
-        entry.unk1.vtable = (getRegionAddress(Region::Text) as *const ()).byte_offset(0x4f88b50);
-        entry.unk2.vtable = (getRegionAddress(Region::Text) as *const ()).byte_offset(0x4f88b70);
-        entry.unk1.unk = cpp::SharedPtr::null();
-        entry.unk2.unk = cpp::SharedPtr::null();
+        entry.unk1 = 0;
+        entry.unk2 = 0;
+        entry.unk3.vtable = (getRegionAddress(Region::Text) as *const ()).byte_offset(0x4f88b50);
+        entry.unk4.vtable = (getRegionAddress(Region::Text) as *const ()).byte_offset(0x4f88b70);
+        entry.unk3.unk = cpp::SharedPtr::null();
+        entry.unk4.unk = cpp::SharedPtr::null();
     }
+    (*table).relocated_entries_2.fill(FPA2Entry2 { unk1: 0, unk2: 0, unk3: 0 });
 }
 
-static LDR_ENTRIES: [usize; 288] = [
+static LDR_ENTRIES_TABLE_1: [usize; 288] = [
 //0x02253a38,
 //0x02253b08,
 //0x02253bd8,
@@ -212,8 +215,6 @@ static LDR_ENTRIES: [usize; 288] = [
 0x0077eac8,
 0x0077eadc,
 0x0082daf8,
-0x0082daf8,
-0x0082dfe0,
 0x0082dfe0,
 0x0085ab2c,
 0x0085ae08,
@@ -364,10 +365,13 @@ pub fn install() {
     Patch::in_text(0x66ee70).bytes(cpu::MovZ {imm16: class_size as u32, rd: 8 }.encode().to_le_bytes()).unwrap();
 
     // patch backwards destruction offset in the class destructor (stupid)
+    let table_2_offset = 0x19a8 + 255 * 56;
     Patch::in_text(0x709b00).bytes(cpu::MovZ {imm16: class_size as u32, rd: 8 }.encode().to_le_bytes()).unwrap();
+    
+    // hooks for initialization and also destruction
     install_hooks!(destroy_entries, destroy_entries2, init_entries);
 
-    for entry in LDR_ENTRIES {
+    for entry in LDR_ENTRIES_TABLE_1 {
         unsafe {
             let instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut ldr = cpu::LdrImmediate::decode(*instr);
