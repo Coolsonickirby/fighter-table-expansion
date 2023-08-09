@@ -16,8 +16,14 @@ pub unsafe fn destroy_entries(ctx: &mut InlineCtx) {
     *ctx.registers[21].x.as_mut() = (*table).relocated_entries.as_ptr() as u64;
 }
 
-#[hook(offset = 0x709b08)]
+#[hook(offset = 0x709d68)]
 pub unsafe fn destroy_entries2(ctx: &mut InlineCtx) {
+    let table = *ctx.registers[0].x.as_ref() as *mut FighterParamAccessor2Ex;
+    *ctx.registers[21].x.as_mut() = (*table).relocated_entries.as_ptr() as u64;
+}
+
+#[hook(offset = 0x709b08)]
+pub unsafe fn destroy_entries3(ctx: &mut InlineCtx) {
     let table = *ctx.registers[19].x.as_ref() as *mut FighterParamAccessor2Ex;
     *ctx.registers[21].x.as_mut() = (*table).relocated_entries.as_ptr() as u64;
 }
@@ -36,7 +42,7 @@ pub unsafe fn init_entries(ctx: &mut InlineCtx) {
     (*table).relocated_entries_2.fill(FPA2Entry2 { unk1: 0, unk2: 0, unk3: 0 });
 }
 
-static LDR_ENTRIES_TABLE_1: [usize; 288] = [
+static LDR_ENTRIES_TABLE_1: [usize; 286] = [
 //0x02253a38,
 //0x02253b08,
 //0x02253bd8,
@@ -350,10 +356,28 @@ static LDR_ENTRIES_TABLE_1: [usize; 288] = [
 0x03490890,
 ];
 
+static ADD_MOVZ_TABLE_1: [usize; 12] = [
+    // 0x066eee0,
+    // 0x0709d64,
+    // 0x070c338,
+    // 0x0709b04,
+    0x0f03fd0,
+    0x0f03f38,
+    0x0f03f78,
+    0x0f04080,
+    0x0f04144,
+    0x0f04204,
+    0x0f042b4,
+    0x0f04378,
+    0x0f04438,
+    0x0f044e8,
+    0x0f045b0,
+    0x0f04674,
+];
+
 /*
 TODO:
-- Other LDR's that are weird  
-- add
+- Other LDR's that are weird (all are related to simon/richter or ice climbers)  
 - madd
 - smaddl
 */
@@ -361,15 +385,17 @@ TODO:
 pub fn install() {
     // patch class size
     let class_size = std::mem::size_of::<FighterParamAccessor2Ex>();
-    Patch::in_text(0x66ee54).bytes(cpu::MovZ {imm16: class_size as u32, rd: 1 }.encode().to_le_bytes()).unwrap();
-    Patch::in_text(0x66ee70).bytes(cpu::MovZ {imm16: class_size as u32, rd: 8 }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x66ee54).bytes(cpu::MovZ {imm16: class_size as u32, rd: 1, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x66ee70).bytes(cpu::MovZ {imm16: class_size as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
 
-    // patch backwards destruction offset in the class destructor (stupid)
+    // patch table 1 accesses that go backwards from table 2's start
     let table_2_offset = 0x19a8 + 255 * 56;
-    Patch::in_text(0x709b00).bytes(cpu::MovZ {imm16: class_size as u32, rd: 8 }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x709d5c).bytes(cpu::MovZ {imm16: class_size as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x709b00).bytes(cpu::MovZ {imm16: class_size as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x70c330).bytes(cpu::MovZ {imm16: class_size as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
     
     // hooks for initialization and also destruction
-    install_hooks!(destroy_entries, destroy_entries2, init_entries);
+    install_hooks!(destroy_entries, destroy_entries2, destroy_entries3, init_entries);
 
     for entry in LDR_ENTRIES_TABLE_1 {
         unsafe {
@@ -378,6 +404,16 @@ pub fn install() {
             ldr.imm9 = ldr.imm9 - 0x60 + 0x19a8;
             // Need to use sky_memcpy instead of write
             Patch::in_text(entry).bytes(ldr.encode().to_le_bytes()).unwrap();
+        }
+    }
+    for entry in ADD_MOVZ_TABLE_1 {
+        unsafe {
+            let movz_instr = (getRegionAddress(Region::Text) as usize + entry - 4) as *const u32;
+            let mut movz = cpu::MovZ::decode(*movz_instr);
+            movz.imm16 = movz.imm16 - 0x60 + 0x19a8;
+
+            // Need to use sky_memcpy instead of write
+            Patch::in_text(entry).bytes(movz.encode().to_le_bytes()).unwrap();
         }
     }
 }

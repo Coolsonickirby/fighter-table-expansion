@@ -170,13 +170,28 @@ impl MovK {
 pub struct MovZ { 
     pub imm16: u32,
     pub rd: u8,
+    pub is_64_bit: bool,
 }
 
 impl MovZ {
-    const MASKED: u32 = 0b110100101_00_0000000000000000_00000;
+    const MASKED: u32 = 0b010100101_00_0000000000000000_00000;
 
     pub fn encode(&self) -> u32 {
-        Self::MASKED | (if self.imm16 > 0xFFFF {1} else {0} << 21) | (if self.imm16 > 0xFFFF {self.imm16 >> 16} else {self.imm16} << 5) | (self.rd as u32)
+        (if self.is_64_bit {1} else {0} << 31) | Self::MASKED | (if self.imm16 > 0xFFFF {1} else {0} << 21) | (if self.imm16 > 0xFFFF {self.imm16 >> 16} else {self.imm16} << 5) | (self.rd as u32)
+    }
+    pub fn decode(instruction: u32) -> Self {
+        if instruction & (1 << 21) == (1 << 21) {
+            todo!("");
+        } else {
+            let is_64_bit = instruction & (1 << 31) == (1 << 31);
+            let imm16 = (instruction >> 5) & 0xFFFF;
+            let rd = (instruction & 0x1F) as u8;
+            Self {
+                imm16,
+                rd,
+                is_64_bit,
+            }
+        }
     }
 }
 

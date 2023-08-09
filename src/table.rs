@@ -54,6 +54,7 @@ pub fn create_cave(register: u8, value: usize, cave_offset: usize, source_offset
     let new_movz: MovZ = MovZ {
         imm16: lower_4,
         rd: register,
+        is_64_bit: true,
     };
     let new_movk_lsl_16: MovK = MovK {
         imm16: middle_4,
@@ -108,7 +109,8 @@ pub fn patch_id_and_jump_at_offset(ptr: usize, register: u8, text_offset: usize)
             Some(id) => id as u32,
             None => crate::globals::insert_data(data) as u32,
         },
-        rd: 18
+        rd: 18,
+        is_64_bit: true,
     };
 
     unsafe {
