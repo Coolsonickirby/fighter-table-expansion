@@ -2,6 +2,7 @@ use skyline::{hook, install_hooks};
 
 
 
+use crate::fpa2;
 use crate::offsets;
 use crate::tables;
 static mut INSTALLED: bool = false;
@@ -440,6 +441,7 @@ pub fn install() {
         }
 
         setup();
+        fpa2::install();
 
         create_agent_fighter::install();
 

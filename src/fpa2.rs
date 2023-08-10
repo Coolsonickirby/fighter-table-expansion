@@ -10,27 +10,32 @@ pub struct FighterParamAccessor2Ex {
     pub relocated_entries_2: [FPA2Entry2; 255],
 }
 
-#[hook(offset = 0x70c33c)]
+#[hook(offset = 0x70c33c, inline)]
 pub unsafe fn destroy_entries(ctx: &mut InlineCtx) {
     let table = *ctx.registers[0].x.as_ref() as *mut FighterParamAccessor2Ex;
     *ctx.registers[21].x.as_mut() = (*table).relocated_entries.as_ptr() as u64;
 }
 
-#[hook(offset = 0x709d68)]
+#[hook(offset = 0x709d68, inline)]
 pub unsafe fn destroy_entries2(ctx: &mut InlineCtx) {
     let table = *ctx.registers[0].x.as_ref() as *mut FighterParamAccessor2Ex;
     *ctx.registers[21].x.as_mut() = (*table).relocated_entries.as_ptr() as u64;
 }
 
-#[hook(offset = 0x709b08)]
+#[hook(offset = 0x709b08, inline)]
 pub unsafe fn destroy_entries3(ctx: &mut InlineCtx) {
     let table = *ctx.registers[19].x.as_ref() as *mut FighterParamAccessor2Ex;
     *ctx.registers[21].x.as_mut() = (*table).relocated_entries.as_ptr() as u64;
 }
 
-#[hook(offset = 0x66ef1c)]
+#[hook(offset = 0x66ef48, inline)]
 pub unsafe fn init_entries(ctx: &mut InlineCtx) {
     let table = *ctx.registers[20].x.as_ref() as *mut FighterParamAccessor2Ex;
+    println!("[fpa2::init_entries] Instance: {:#x}", table as usize);
+    println!("[fpa2::init_entries] Original Table 1: {:#x}", table as usize + 0x60);
+    println!("[fpa2::init_entries] Original Table 2: {:#x}", table as usize + 0x14F0);
+    println!("[fpa2::init_entries] Relocated Table 1: {:#x}", table as usize + 0x19A8);
+    println!("[fpa2::init_entries] Relocated Table 2: {:#x}", table as usize + 0x5170);
     for entry in (*table).relocated_entries.iter_mut() {
         entry.unk1 = 0;
         entry.unk2 = 0;
@@ -375,7 +380,7 @@ static ADD_MOVZ_TABLE_1: [usize; 12] = [
     0x0f04674,
 ];
 
-static LDRSW_ENTRIES_TABLE_2: [usize; 10] = [
+static LDRSW_ENTRIES_TABLE_2: [usize; 9] = [
     0x34b1b4,
     0x85ae04,
     0x6e1f08,
@@ -385,7 +390,7 @@ static LDRSW_ENTRIES_TABLE_2: [usize; 10] = [
     0x6e22e0,
     0x6e2520,
     0xf02984,
-    0x70a520,
+    // 0x70a520, // This is a STR
 ];
 
 /*
@@ -398,14 +403,14 @@ TODO:
 pub fn install() {
     // patch class size
     let class_size = std::mem::size_of::<FighterParamAccessor2Ex>();
-    Patch::in_text(0x66ee54).bytes(cpu::MovZ {imm16: class_size as u32, rd: 1, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x66ee50).bytes(cpu::MovZ {imm16: class_size as u32, rd: 1, is_64_bit: false }.encode().to_le_bytes()).unwrap();
     Patch::in_text(0x66ee70).bytes(cpu::MovZ {imm16: class_size as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
 
     // patch table 1 accesses that go backwards from table 2's start
     let table_2_offset = 0x19a8 + 255 * 56;
-    Patch::in_text(0x709d5c).bytes(cpu::MovZ {imm16: class_size as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
-    Patch::in_text(0x709b00).bytes(cpu::MovZ {imm16: class_size as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
-    Patch::in_text(0x70c330).bytes(cpu::MovZ {imm16: class_size as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x709d5c).bytes(cpu::MovZ {imm16: table_2_offset as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x709b00).bytes(cpu::MovZ {imm16: table_2_offset as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x70c330).bytes(cpu::MovZ {imm16: table_2_offset as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
     
     // hooks for initialization and also destruction
     install_hooks!(destroy_entries, destroy_entries2, destroy_entries3, init_entries);
@@ -432,11 +437,13 @@ pub fn install() {
     for entry in LDRSW_ENTRIES_TABLE_2 {
         unsafe {
             let ldrsw_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
-            let mut ldrsw = cpu::LdrswPostImmediate::decode(*ldrsw_instr).unwrap();
-            ldrsw.imm9 = ldrsw.imm9 - 0x14F0 + table_2_offset;
-
-            // Need to use sky_memcpy instead of write
-            Patch::in_text(entry).bytes(ldrsw.encode().to_le_bytes()).unwrap();
+            if let Some(mut ldrsw) = cpu::LdrswPostImmediate::decode(*ldrsw_instr) {
+                ldrsw.imm9 = ldrsw.imm9 - 0x14F0 + table_2_offset;
+                // Need to use sky_memcpy instead of write
+                Patch::in_text(entry).bytes(ldrsw.encode().to_le_bytes()).unwrap();
+            } else {
+                println!("Failed to decode LDRSW!: {:#x}, {:#x}", entry, *ldrsw_instr);
+            }
         }
     }
 }

@@ -109,6 +109,8 @@ impl LdrImmediate {
         None
     }
 }
+
+#[derive(Debug)]
 pub struct LdrswPostImmediate {
     pub imm9: u16,
     pub rn: u8,
