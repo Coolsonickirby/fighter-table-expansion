@@ -375,6 +375,19 @@ static ADD_MOVZ_TABLE_1: [usize; 12] = [
     0x0f04674,
 ];
 
+static LDRSW_ENTRIES_TABLE_2: [usize; 10] = [
+    0x34b1b4,
+    0x85ae04,
+    0x6e1f08,
+    0x266d20,
+    0x6ce8c8,
+    0x6d063c,
+    0x6e22e0,
+    0x6e2520,
+    0xf02984,
+    0x70a520,
+];
+
 /*
 TODO:
 - Other LDR's that are weird (all are related to simon/richter or ice climbers)  
@@ -399,8 +412,8 @@ pub fn install() {
 
     for entry in LDR_ENTRIES_TABLE_1 {
         unsafe {
-            let instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
-            let mut ldr = cpu::LdrImmediate::decode(*instr);
+            let ldr_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
+            let mut ldr = cpu::LdrImmediate::decode(*ldr_instr).unwrap();
             ldr.imm9 = ldr.imm9 - 0x60 + 0x19a8;
             // Need to use sky_memcpy instead of write
             Patch::in_text(entry).bytes(ldr.encode().to_le_bytes()).unwrap();
@@ -414,6 +427,16 @@ pub fn install() {
 
             // Need to use sky_memcpy instead of write
             Patch::in_text(entry).bytes(movz.encode().to_le_bytes()).unwrap();
+        }
+    }
+    for entry in LDRSW_ENTRIES_TABLE_2 {
+        unsafe {
+            let ldrsw_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
+            let mut ldrsw = cpu::LdrswPostImmediate::decode(*ldrsw_instr).unwrap();
+            ldrsw.imm9 = ldrsw.imm9 - 0x14F0 + table_2_offset;
+
+            // Need to use sky_memcpy instead of write
+            Patch::in_text(entry).bytes(ldrsw.encode().to_le_bytes()).unwrap();
         }
     }
 }

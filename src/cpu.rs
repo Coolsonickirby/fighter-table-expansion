@@ -82,29 +82,62 @@ pub struct LdrImmediate {
     pub imm9: u16,
     pub rn: u8,
     pub rt: u8,
-    pub is_64_bit: bool,
+    pub size: u8,
 }
 
 impl LdrImmediate {
-    const MASK: u32 = 0b10_111_1_11_11_1_000000000_11_00000_00000;
-    const MASKED: u32 = 0b10_111_0_00_01_0_000000000_01_00000_00000;
+    const MASK: u32 = 0xffc00000;
+    const MASKED: u32 = 0xf9400000;
 
-    pub fn encode(&self) -> u32 {
-        let size = if self.is_64_bit { 1 } else { 0 };
-        let imm9 = (self.imm9 as u32) << 12;
+    pub const fn encode(&self) -> u32 {
+        let size = (self.size as u32) << 0x1E;
+        let imm9 = ((self.imm9 as u32) >> self.size) << 10;
         let rn = (self.rn as u32) << 5;
         let rt = self.rt as u32;
 
         Self::MASKED | size | imm9 | rn | rt
     }
 
-    pub fn decode(instruction: u32) -> Self {
-        let is_64_bit = (instruction & 1) != 0;
-        let imm9 = ((instruction >> 12) & 0x1FF) as u16;
-        let rn = ((instruction >> 5) & 0x1F) as u8;
-        let rt = (instruction & 0x1F) as u8;
+    pub fn decode(instruction: u32) -> Option<Self> {
+        if instruction & Self::MASK == Self::MASKED {
+            let size = ((instruction >> 0x1E) & 0xFF) as u8;
+            let imm9 = (((instruction >> 10) & 0xFFF) << size) as u16;
+            let rn = ((instruction >> 5) & 0x1F) as u8;
+            let rt = (instruction & 0x1F) as u8;
+            return  Some(Self { imm9, rn, rt, size });
+        }
+        None
+    }
+}
+pub struct LdrswPostImmediate {
+    pub imm9: u16,
+    pub rn: u8,
+    pub rt: u8,
+    pub size: u8,
+}
 
-        Self { imm9, rn, rt, is_64_bit }
+impl LdrswPostImmediate {
+    const MASK: u32 = 0b111111100000000000000000000000;
+    const MASKED: u32 = 0b111001100000000000000000000000;
+
+    pub fn encode(&self) -> u32 {
+        let size = (self.size as u32) << 0x1E;
+        let imm9 = ((self.imm9 as u32) >> self.size) << 10;
+        let rn = (self.rn as u32) << 5;
+        let rt = self.rt as u32;
+
+        Self::MASKED | size | imm9 | rn | rt
+    }
+
+    pub fn decode(instruction: u32) -> Option<Self> {
+        if instruction & Self::MASK == Self::MASKED {
+            let size = ((instruction >> 0x1E) & 0xFF) as u8;
+            let imm9 = (((instruction >> 10) & 0xFFF) << size) as u16;
+            let rn = ((instruction >> 5) & 0x1F) as u8;
+            let rt = (instruction & 0x1F) as u8;
+            return Some(Self { imm9, rn, rt, size });
+        }
+        None
     }
 }
 
