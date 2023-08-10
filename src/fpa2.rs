@@ -47,6 +47,27 @@ pub unsafe fn init_entries(ctx: &mut InlineCtx) {
     (*table).relocated_entries_2.fill(FPA2Entry2 { unk1: 0, unk2: 0, unk3: 0 });
 }
 
+#[hook(offset = 0x70a488, inline)]
+pub unsafe fn some_iter(ctx: &mut InlineCtx) {
+    let ptr = *ctx.registers[15].x.as_ref() as usize;
+    let w = *ctx.registers[16].w.as_ref() as u32;
+    *((ptr + 0x5170) as *mut u32) = w;
+}
+
+#[hook(offset = 0x70a4d4, inline)]
+pub unsafe fn some_iter2(ctx: &mut InlineCtx) {
+    let ptr = *ctx.registers[15].x.as_ref() as usize;
+    let w = *ctx.registers[16].w.as_ref() as u32;
+    *((ptr + 0x5178) as *mut u32) = w;
+}
+
+#[hook(offset = 0x70a520, inline)]
+pub unsafe fn some_iter3(ctx: &mut InlineCtx) {
+    let ptr = *ctx.registers[15].x.as_ref() as usize;
+    let w = *ctx.registers[16].w.as_ref() as u32;
+    *((ptr + 0x5174) as *mut u32) = w;
+}
+
 static LDR_ENTRIES_TABLE_1: [usize; 286] = [
 //0x02253a38,
 //0x02253b08,
@@ -414,6 +435,11 @@ pub fn install() {
     
     // hooks for initialization and also destruction
     install_hooks!(destroy_entries, destroy_entries2, destroy_entries3, init_entries);
+
+    Patch::in_text(0x70a488).nop().unwrap();
+    Patch::in_text(0x70a4d4).nop().unwrap();
+    Patch::in_text(0x70a520).nop().unwrap();
+    install_hooks!(some_iter, some_iter2, some_iter3);
 
     for entry in LDR_ENTRIES_TABLE_1 {
         unsafe {
