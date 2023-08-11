@@ -79,7 +79,7 @@ impl AddImm {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct LdrRegisterImmediate {
     pub imm12: u16,
     pub rn: u8,
@@ -91,13 +91,23 @@ impl LdrRegisterImmediate {
     const MASK: u32 = 0x3fc00000;
     const MASKED: u32 = 0x39400000;
 
-    pub const fn encode(&self) -> u32 {
+    pub fn encode(&self) -> Option<u32> {
         let size = (self.size as u32) << 0x1E;
         let imm12 = ((self.imm12 as u32) >> self.size) << 10;
         let rn = (self.rn as u32) << 5;
         let rt = self.rt as u32;
 
-        Self::MASKED | size | imm12 | rn | rt
+        let encoded = Self::MASKED | size | imm12 | rn | rt;
+
+        if let Some(decoded) = Self::decode(encoded) {
+            if decoded == *self {
+                Some(encoded)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 
     pub fn decode(instruction: u32) -> Option<Self> {
@@ -112,7 +122,7 @@ impl LdrRegisterImmediate {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct StrRegisterImmediate {
     pub imm12: u16,
     pub rn: u8,
@@ -124,13 +134,22 @@ impl StrRegisterImmediate {
     const MASK: u32 = 0x3f000000;
     const MASKED: u32 = 0x39000000;
 
-    pub const fn encode(&self) -> u32 {
+    pub fn encode(&self) -> Option<u32> {
         let size = (self.size as u32) << 0x1E;
         let imm12 = ((self.imm12 as u32) >> self.size) << 10;
         let rn = (self.rn as u32) << 5;
         let rt = self.rt as u32;
 
-        Self::MASKED | size | imm12 | rn | rt
+        let encoded = Self::MASKED | size | imm12 | rn | rt;
+        if let Some(decoded) = Self::decode(encoded) {
+            if decoded == *self {
+                Some(encoded)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 
     pub fn decode(instruction: u32) -> Option<Self> {
@@ -145,7 +164,7 @@ impl StrRegisterImmediate {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct LdrswPostImmediate {
     pub imm9: u16,
     pub rn: u8,
@@ -157,13 +176,22 @@ impl LdrswPostImmediate {
     const MASK: u32 = 0b111111100000000000000000000000;
     const MASKED: u32 = 0b111001100000000000000000000000;
 
-    pub fn encode(&self) -> u32 {
+    pub fn encode(&self) -> Option<u32> {
         let size = (self.size as u32) << 0x1E;
         let imm9 = ((self.imm9 as u32) >> self.size) << 10;
         let rn = (self.rn as u32) << 5;
         let rt = self.rt as u32;
 
-        Self::MASKED | size | imm9 | rn | rt
+        let encoded = Self::MASKED | size | imm9 | rn | rt;
+        if let Some(decoded) = Self::decode(encoded) {
+            if decoded == *self {
+                Some(encoded)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 
     pub fn decode(instruction: u32) -> Option<Self> {
