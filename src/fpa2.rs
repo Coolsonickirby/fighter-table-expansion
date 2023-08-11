@@ -46,14 +46,14 @@ static STR_UNK: [usize; 4] = [
 
 // References to FighterParamAccessor2::unk_ref_count via LdrRegisterImmediate
 static LDR_UNK_REF_COUNT: [usize; 1] = [
-    0x652edc,
+    0x652edc, // BROKEN
 ];
 
 // References to FighterParamAccessor2::unk_ref_count via StrRegisterImmediate
 static STR_UNK_REF_COUNT: [usize; 3] = [
-    0x652ee8,
-    0x70a91c,
-    0x652f30,
+    0x652ee8, // BROKEN
+    0x70a91c, // BROKEN
+    0x652f30, // BROKEN
 ];
 
 // References to FighterParamAccessor2::unk2 via LdrRegisterImmediate
@@ -80,48 +80,45 @@ static STR_UNK2: [usize; 10] = [
     0x6530b0,
 ];
 
-// References to FighterParamAccessor2::unk_ref_count via LdrRegisterImmediate
+// References to FighterParamAccessor2::unk2_ref_count via LdrRegisterImmediate
 static LDR_UNK2_REF_COUNT: [usize; 4] = [
-    0x721a3c,
-    0x721b48,
-    0x651208,
-    0x653094,
+    0x721a3c, // BROKEN
+    0x721b48, // BROKEN
+    0x651208, // BROKEN
+    0x653094, // BROKEN
 ];
 
-// References to FighterParamAccessor2::unk_ref_count via StrRegisterImmediate
+// References to FighterParamAccessor2::unk2_ref_count via StrRegisterImmediate
 static STR_UNK2_REF_COUNT: [usize; 7] = [
-    0x721b50,
-    0x651214,
-    0x6530a0,
-    0x70a95c,
-    0x66ef34,
-    0x65125c,
-    0x6530e8,
+    0x721b50, // BROKEN
+    0x651214, // BROKEN
+    0x6530a0, // BROKEN
+    0x70a95c, // BROKEN
+    0x66ef34, // BROKEN
+    0x65125c, // BROKEN
+    0x6530e8, // BROKEN
 ];
 
 // References to FighterParamAccessor2::lock via an AddRegister/MovZ pair.
 static ADD_MOVZ_LOCK: [usize; 5] = [
-    // 0x709a7c,
     0x721a28,
     0x6511fc,
     0x653088,
     0x652ed0,
-    // 0x66ef28,
     0x607b24,
 ];
 
 // References to FighterParamAccessor2::entries_2 via a LdrswPostImmediate.
-static LDRSW_ENTRIES_2: [usize; 9] = [
+static LDRSW_ENTRIES_2: [usize; 8] = [
     0x34b1b4,
     0x85ae04,
     0x6e1f08,
-    0x266d20,
+    // 0x266d20,
     0x6ce8c8,
     0x6d063c,
     0x6e22e0,
     0x6e2520,
     0xf02984,
-    // 0x70a520, // This is a STR
 ];
 
 // References to FighterParamAccessor2::entries_2 via a StrRegisterImmediate.
@@ -135,6 +132,12 @@ static STR_ENTRIES_2: [usize; 3] = [
 pub unsafe fn init_entries(ctx: &mut InlineCtx) {
     let table = *ctx.registers[20].x.as_ref() as *mut FighterParamAccessor2Ex;
     println!("[fpa2::init_entries] Instance: {:#x}", table as usize);
+    println!("[fpa2::init_entries] Please look: {:#x}", table as usize + ENTRIES_2_OFFSET + 0x58 * std::mem::size_of::<FPA2Entry2>());
+    println!("[fpa2::init_entries] Original Unk: {:#x}", table as usize + 0x1958);
+    println!("[fpa2::init_entries] Original UnkRefCount: {:#x}", table as usize + 0x1968);
+    println!("[fpa2::init_entries] Original Unk2: {:#x}", table as usize + 0x1970);
+    println!("[fpa2::init_entries] Original Unk2RefCount: {:#x}", table as usize + 0x1980);
+    std::thread::sleep(Duration::from_secs(5));
     for entry in (*table).entries.iter_mut() {
         entry.unk1 = 0;
         entry.unk2 = 0;
@@ -174,7 +177,7 @@ pub fn install() {
     Patch::in_text(0x709d5c).bytes(MovZ {imm16: ENTRIES_2_OFFSET as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
     Patch::in_text(0x709b00).bytes(MovZ {imm16: ENTRIES_2_OFFSET as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
     Patch::in_text(0x70c330).bytes(MovZ {imm16: ENTRIES_2_OFFSET as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
-
+    
     install_hook!(init_entries);
 
     // Patch some accesses to lock. 
@@ -199,7 +202,7 @@ pub fn install() {
             if let Some(mut ldrsw) = LdrswPostImmediate::decode(*ldrsw_instr) {
                 ldrsw.imm9 = ldrsw.imm9 - 0x14F0 + (ENTRIES_2_OFFSET as u16);
 
-                Patch::in_text(entry).bytes(ldrsw.encode().to_le_bytes()).unwrap();
+                Patch::in_text(entry).bytes(ldrsw.encode().unwrap().to_le_bytes()).unwrap();
             } else {
                 println!("Failed to decode LDRSW!: {:#x}, {:#x}", entry, *ldrsw_instr);
             }
@@ -211,7 +214,7 @@ pub fn install() {
             let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
             str.imm12 = str.imm12 - 0x14F0 + (ENTRIES_2_OFFSET as u16);
 
-            Patch::in_text(entry).bytes(str.encode().to_le_bytes()).unwrap();
+            Patch::in_text(entry).bytes(str.encode().unwrap().to_le_bytes()).unwrap();
         }
     }
 
@@ -222,7 +225,11 @@ pub fn install() {
             let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
             ldr.imm12 = ldr.imm12 - 0x1958 + (UNK_OFFSET as u16);
 
-            Patch::in_text(entry).bytes(ldr.encode().to_le_bytes()).unwrap();
+            if let Some(encoded) = ldr.encode() {
+                Patch::in_text(entry).bytes(ldr.encode().unwrap().to_le_bytes()).unwrap();
+            } else {
+                println!("Failed to re-encode LDR!: {:#x}, {:#x}", entry, *ldr_instr);
+            }
         }
     }
     for entry in STR_UNK {
@@ -231,7 +238,11 @@ pub fn install() {
             let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
             str.imm12 = str.imm12 - 0x1958 + (UNK_OFFSET as u16);
 
-            Patch::in_text(entry).bytes(str.encode().to_le_bytes()).unwrap();
+            if let Some(encoded) = str.encode() {
+                Patch::in_text(entry).bytes(str.encode().unwrap().to_le_bytes()).unwrap();
+            } else {
+                println!("Failed to re-encode STR!: {:#x}, {:#x}", entry, *str_instr);
+            }
         }
     }
     // Here, we patch all references to unk_ref_count.
@@ -241,7 +252,11 @@ pub fn install() {
             let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
             ldr.imm12 = ldr.imm12 - 0x1968 + (UNK_REF_COUNT_OFFSET as u16);
 
-            Patch::in_text(entry).bytes(ldr.encode().to_le_bytes()).unwrap();
+            if let Some(encoded) = ldr.encode() {
+                Patch::in_text(entry).bytes(ldr.encode().unwrap().to_le_bytes()).unwrap();
+            } else {
+                println!("Failed to re-encode LDR!: {:#x}, {:#x}", entry, *ldr_instr);
+            }
         }
     }
     for entry in STR_UNK_REF_COUNT {
@@ -250,7 +265,11 @@ pub fn install() {
             let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
             str.imm12 = str.imm12 - 0x1968 + (UNK_REF_COUNT_OFFSET as u16);
 
-            Patch::in_text(entry).bytes(str.encode().to_le_bytes()).unwrap();
+            if let Some(encoded) = str.encode() {
+                Patch::in_text(entry).bytes(str.encode().unwrap().to_le_bytes()).unwrap();
+            } else {
+                println!("Failed to re-encode STR!: {:#x}, {:#x}", entry, *str_instr);
+            }
         }
     }
     // Here, we patch all references to unk2.
@@ -260,7 +279,11 @@ pub fn install() {
             let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
             ldr.imm12 = ldr.imm12 - 0x1970 + (UNK2_OFFSET as u16);
 
-            Patch::in_text(entry).bytes(ldr.encode().to_le_bytes()).unwrap();
+            if let Some(encoded) = ldr.encode() {
+                Patch::in_text(entry).bytes(ldr.encode().unwrap().to_le_bytes()).unwrap();
+            } else {
+                println!("Failed to re-encode LDR!: {:#x}, {:#x}", entry, *ldr_instr);
+            }
         }
     }
     for entry in STR_UNK2 {
@@ -269,7 +292,11 @@ pub fn install() {
             let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
             str.imm12 = str.imm12 - 0x1970 + (UNK2_OFFSET as u16);
 
-            Patch::in_text(entry).bytes(str.encode().to_le_bytes()).unwrap();
+            if let Some(encoded) = str.encode() {
+                Patch::in_text(entry).bytes(str.encode().unwrap().to_le_bytes()).unwrap();
+            } else {
+                println!("Failed to re-encode STR!: {:#x}, {:#x}", entry, *str_instr);
+            }
         }
     }
     // Here, we patch all references to unk2_ref_count.
@@ -279,7 +306,11 @@ pub fn install() {
             let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
             ldr.imm12 = ldr.imm12 - 0x1980 + (UNK2_REF_COUNT_OFFSET as u16);
 
-            Patch::in_text(entry).bytes(ldr.encode().to_le_bytes()).unwrap();
+            if let Some(encoded) = ldr.encode() {
+                Patch::in_text(entry).bytes(ldr.encode().unwrap().to_le_bytes()).unwrap();
+            } else {
+                println!("Failed to re-encode LDR!: {:#x}, {:#x}", entry, *ldr_instr);
+            }
         }
     }
     for entry in STR_UNK2_REF_COUNT {
@@ -288,7 +319,11 @@ pub fn install() {
             let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
             str.imm12 = str.imm12 - 0x1980 + (UNK2_REF_COUNT_OFFSET as u16);
 
-            Patch::in_text(entry).bytes(str.encode().to_le_bytes()).unwrap();
+            if let Some(encoded) = str.encode() {
+                Patch::in_text(entry).bytes(str.encode().unwrap().to_le_bytes()).unwrap();
+            } else {
+                println!("Failed to re-encode STR!: {:#x}, {:#x}", entry, *str_instr);
+            }
         }
     }
 }
