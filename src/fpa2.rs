@@ -82,21 +82,21 @@ static STR_UNK2: [usize; 10] = [
 
 // References to FighterParamAccessor2::unk2_ref_count via LdrRegisterImmediate
 static LDR_UNK2_REF_COUNT: [usize; 4] = [
-    0x721a3c, // BROKEN
-    0x721b48, // BROKEN
-    0x651208, // BROKEN
-    0x653094, // BROKEN
+    0x721a3c,
+    0x721b48,
+    0x651208,
+    0x653094,
 ];
 
 // References to FighterParamAccessor2::unk2_ref_count via StrRegisterImmediate
 static STR_UNK2_REF_COUNT: [usize; 7] = [
-    0x721b50, // BROKEN
-    0x651214, // BROKEN
-    0x6530a0, // BROKEN
-    0x70a95c, // BROKEN
-    0x66ef34, // BROKEN
-    0x65125c, // BROKEN
-    0x6530e8, // BROKEN
+    0x721b50,
+    0x651214,
+    0x6530a0,
+    0x70a95c,
+    0x66ef34,
+    0x65125c,
+    0x6530e8,
 ];
 
 // References to FighterParamAccessor2::lock via an AddRegister/MovZ pair.
@@ -251,7 +251,7 @@ pub fn install() {
             let ldr_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
             ldr.imm12 = ldr.imm12 - 0x1968 + (UNK_REF_COUNT_OFFSET as u16);
-
+            ldr.size = 3;
             if let Some(encoded) = ldr.encode() {
                 Patch::in_text(entry).bytes(ldr.encode().unwrap().to_le_bytes()).unwrap();
             } else {
@@ -264,6 +264,7 @@ pub fn install() {
             let str_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
             str.imm12 = str.imm12 - 0x1968 + (UNK_REF_COUNT_OFFSET as u16);
+            str.size = 3;
 
             if let Some(encoded) = str.encode() {
                 Patch::in_text(entry).bytes(str.encode().unwrap().to_le_bytes()).unwrap();
@@ -305,6 +306,7 @@ pub fn install() {
             let ldr_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
             ldr.imm12 = ldr.imm12 - 0x1980 + (UNK2_REF_COUNT_OFFSET as u16);
+            ldr.size = 3;
 
             if let Some(encoded) = ldr.encode() {
                 Patch::in_text(entry).bytes(ldr.encode().unwrap().to_le_bytes()).unwrap();
@@ -318,6 +320,7 @@ pub fn install() {
             let str_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
             str.imm12 = str.imm12 - 0x1980 + (UNK2_REF_COUNT_OFFSET as u16);
+            str.size = 3;
 
             if let Some(encoded) = str.encode() {
                 Patch::in_text(entry).bytes(str.encode().unwrap().to_le_bytes()).unwrap();
