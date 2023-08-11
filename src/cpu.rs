@@ -78,33 +78,68 @@ impl AddImm {
     }
 }
 
-pub struct LdrImmediate {
-    pub imm9: u16,
+
+#[derive(Debug)]
+pub struct LdrRegisterImmediate {
+    pub imm12: u16,
     pub rn: u8,
     pub rt: u8,
     pub size: u8,
 }
 
-impl LdrImmediate {
-    const MASK: u32 = 0xffc00000;
-    const MASKED: u32 = 0xf9400000;
+impl LdrRegisterImmediate {
+    const MASK: u32 = 0x3fc00000;
+    const MASKED: u32 = 0x39400000;
 
     pub const fn encode(&self) -> u32 {
         let size = (self.size as u32) << 0x1E;
-        let imm9 = ((self.imm9 as u32) >> self.size) << 10;
+        let imm12 = ((self.imm12 as u32) >> self.size) << 10;
         let rn = (self.rn as u32) << 5;
         let rt = self.rt as u32;
 
-        Self::MASKED | size | imm9 | rn | rt
+        Self::MASKED | size | imm12 | rn | rt
     }
 
     pub fn decode(instruction: u32) -> Option<Self> {
         if instruction & Self::MASK == Self::MASKED {
             let size = ((instruction >> 0x1E) & 0xFF) as u8;
-            let imm9 = (((instruction >> 10) & 0xFFF) << size) as u16;
+            let imm12 = (((instruction >> 10) & 0xFFF) << size) as u16;
             let rn = ((instruction >> 5) & 0x1F) as u8;
             let rt = (instruction & 0x1F) as u8;
-            return  Some(Self { imm9, rn, rt, size });
+            return  Some(Self { imm12, rn, rt, size });
+        }
+        None
+    }
+}
+
+#[derive(Debug)]
+pub struct StrRegisterImmediate {
+    pub imm12: u16,
+    pub rn: u8,
+    pub rt: u8,
+    pub size: u8,
+}
+
+impl StrRegisterImmediate {
+    const MASK: u32 = 0x3f000000;
+    const MASKED: u32 = 0x39000000;
+
+    pub const fn encode(&self) -> u32 {
+        let size = (self.size as u32) << 0x1E;
+        let imm12 = ((self.imm12 as u32) >> self.size) << 10;
+        let rn = (self.rn as u32) << 5;
+        let rt = self.rt as u32;
+
+        Self::MASKED | size | imm12 | rn | rt
+    }
+
+    pub fn decode(instruction: u32) -> Option<Self> {
+        if instruction & Self::MASK == Self::MASKED {
+            let size = ((instruction >> 0x1E) & 0xFF) as u8;
+            let imm12 = (((instruction >> 10) & 0xFFF) << size) as u16;
+            let rn = ((instruction >> 5) & 0x1F) as u8;
+            let rt = (instruction & 0x1F) as u8;
+            return  Some(Self { imm12, rn, rt, size });
         }
         None
     }
