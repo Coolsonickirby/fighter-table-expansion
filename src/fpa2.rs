@@ -1,4 +1,6 @@
-use skyline::{hooks::*, patching::Patch, install_hooks, hook};
+use std::time::Duration;
+
+use skyline::{hooks::*, patching::Patch, install_hooks, hook, install_hook};
 use smash::{cpp, app::*, lib};
 
 use crate::cpu::*;
@@ -122,26 +124,12 @@ static LDRSW_ENTRIES_2: [usize; 9] = [
     // 0x70a520, // This is a STR
 ];
 
-#[hook(offset = 0x70a488, inline)]
-pub unsafe fn some_iter(ctx: &mut InlineCtx) {
-    let ptr = *ctx.registers[15].x.as_ref() as usize;
-    let w = *ctx.registers[16].w.as_ref() as u32;
-    *((ptr + ENTRIES_2_OFFSET) as *mut u32) = w;
-}
-
-#[hook(offset = 0x70a4d4, inline)]
-pub unsafe fn some_iter2(ctx: &mut InlineCtx) {
-    let ptr = *ctx.registers[15].x.as_ref() as usize;
-    let w = *ctx.registers[16].w.as_ref() as u32;
-    *((ptr + ENTRIES_2_OFFSET + 8) as *mut u32) = w;
-}
-
-#[hook(offset = 0x70a520, inline)]
-pub unsafe fn some_iter3(ctx: &mut InlineCtx) {
-    let ptr = *ctx.registers[15].x.as_ref() as usize;
-    let w = *ctx.registers[16].w.as_ref() as u32;
-    *((ptr + ENTRIES_2_OFFSET + 4) as *mut u32) = w;
-}
+// References to FighterParamAccessor2::entries_2 via a StrRegisterImmediate.
+static STR_ENTRIES_2: [usize; 3] = [
+    0x70a488,
+    0x70a4d4,
+    0x70a520,
+];
 
 #[hook(offset = 0x66ef48, inline)]
 pub unsafe fn init_entries(ctx: &mut InlineCtx) {
@@ -156,6 +144,10 @@ pub unsafe fn init_entries(ctx: &mut InlineCtx) {
         entry.unk4.unk = cpp::SharedPtr::null();
     }
     (*table).entries_2.fill(FPA2Entry2 { unk1: 0, unk2: 0, unk3: 0 });
+    (*table).unk = cpp::SharedPtr::null();
+    (*table).unk_ref_count = 0;
+    (*table).unk2 = cpp::SharedPtr::null();
+    (*table).unk2_ref_count = 0;
 }
 
 // Offset of entries_2 in our new struct.
@@ -183,11 +175,7 @@ pub fn install() {
     Patch::in_text(0x709b00).bytes(MovZ {imm16: ENTRIES_2_OFFSET as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
     Patch::in_text(0x70c330).bytes(MovZ {imm16: ENTRIES_2_OFFSET as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
 
-    // NOP and inline hook in a few places where the game writes to entries_2.
-    Patch::in_text(0x70a488).nop().unwrap();
-    Patch::in_text(0x70a4d4).nop().unwrap();
-    Patch::in_text(0x70a520).nop().unwrap();
-    install_hooks!(some_iter, some_iter2, some_iter3);
+    install_hook!(init_entries);
 
     // Patch some accesses to lock. 
     Patch::in_text(0x709a74).bytes(MovZ {imm16: LOCK_OFFSET as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
@@ -215,6 +203,15 @@ pub fn install() {
             } else {
                 println!("Failed to decode LDRSW!: {:#x}, {:#x}", entry, *ldrsw_instr);
             }
+        }
+    }
+    for entry in STR_ENTRIES_2 {
+        unsafe {
+            let str_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
+            let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
+            str.imm12 = str.imm12 - 0x14F0 + (ENTRIES_2_OFFSET as u16);
+
+            Patch::in_text(entry).bytes(str.encode().to_le_bytes()).unwrap();
         }
     }
 
