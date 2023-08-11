@@ -1,8 +1,7 @@
-use skyline::{hooks::*, patching::Patch};
+use skyline::{hooks::*, patching::Patch, install_hooks, hook};
 use smash::{cpp, app::*, lib};
 
 use crate::cpu::*;
-
 
 #[repr(C)]
 pub struct FighterParamAccessor2Ex {
@@ -63,7 +62,6 @@ static LDR_UNK2: [usize; 6] = [
     0x65121c,
     0x6530a8,
     0x721afc,
-    
 ];
 
 // References to FighterParamAccessor2::unk2 via StrImmediate
@@ -81,12 +79,10 @@ static STR_UNK2: [usize; 10] = [
 ];
 
 // References to FighterParamAccessor2::unk_ref_count via LdrImmediate
-static LDR_UNK2_REF_COUNT: [usize; 6] = [
+static LDR_UNK2_REF_COUNT: [usize; 4] = [
     0x721a3c,
     0x721b48,
     0x651208,
-    0x651208,
-    0x653094,
     0x653094,
 ];
 
@@ -102,14 +98,14 @@ static STR_UNK2_REF_COUNT: [usize; 7] = [
 ];
 
 // References to FighterParamAccessor2::lock via an AddRegister/MovZ pair.
-static ADD_MOVZ_LOCK: [usize; 7] = [
-    0x721b50,
-    0x651214,
-    0x6530a0,
-    0x70a95c,
-    0x66ef34,
-    0x65125c,
-    0x6530e8,
+static ADD_MOVZ_LOCK: [usize; 5] = [
+    // 0x709a7c,
+    0x721a28,
+    0x6511fc,
+    0x653088,
+    0x652ed0,
+    // 0x66ef28,
+    0x607b24,
 ];
 
 // References to FighterParamAccessor2::entries_2 via a LdrswImmediate.
@@ -126,17 +122,72 @@ static LDRSW_ENTRIES_2: [usize; 9] = [
     // 0x70a520, // This is a STR
 ];
 
-pub fn install() {
-    /* Here, we patch all references to entries_2. */
-    // Offset of entries_2 in our new struct.
-    let entries_2_offset = 0x3860;
+#[hook(offset = 0x70a488, inline)]
+pub unsafe fn some_iter(ctx: &mut InlineCtx) {
+    let ptr = *ctx.registers[15].x.as_ref() as usize;
+    let w = *ctx.registers[16].w.as_ref() as u32;
+    *((ptr + ENTRIES_2_OFFSET) as *mut u32) = w;
+}
 
+#[hook(offset = 0x70a4d4, inline)]
+pub unsafe fn some_iter2(ctx: &mut InlineCtx) {
+    let ptr = *ctx.registers[15].x.as_ref() as usize;
+    let w = *ctx.registers[16].w.as_ref() as u32;
+    *((ptr + ENTRIES_2_OFFSET + 8) as *mut u32) = w;
+}
+
+#[hook(offset = 0x70a520, inline)]
+pub unsafe fn some_iter3(ctx: &mut InlineCtx) {
+    let ptr = *ctx.registers[15].x.as_ref() as usize;
+    let w = *ctx.registers[16].w.as_ref() as u32;
+    *((ptr + ENTRIES_2_OFFSET + 4) as *mut u32) = w;
+}
+
+// Offset of entries_2 in our new struct.
+const ENTRIES_2_OFFSET: usize = 0x3860;
+// Offset of lock in our new struct.
+const LOCK_OFFSET: usize = 0x4490;
+
+const CLASS_SIZE: usize = std::mem::size_of::<FighterParamAccessor2Ex>();
+
+pub fn install() {
+    // Patch the class size.
+    Patch::in_text(0x66ee50).bytes(MovZ {imm16: CLASS_SIZE as u32, rd: 1, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x66ee70).bytes(MovZ {imm16: CLASS_SIZE as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+
+    // Patch entries accesses that go backwards from entries_2's start.
+    Patch::in_text(0x709d5c).bytes(MovZ {imm16: ENTRIES_2_OFFSET as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x709b00).bytes(MovZ {imm16: ENTRIES_2_OFFSET as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x70c330).bytes(MovZ {imm16: ENTRIES_2_OFFSET as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+
+    // NOP and inline hook in a few places where the game writes to entries_2.
+    Patch::in_text(0x70a488).nop().unwrap();
+    Patch::in_text(0x70a4d4).nop().unwrap();
+    Patch::in_text(0x70a520).nop().unwrap();
+    install_hooks!(some_iter, some_iter2, some_iter3);
+
+    // Patch some accesses to lock. 
+    Patch::in_text(0x709a74).bytes(MovZ {imm16: LOCK_OFFSET as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+    Patch::in_text(0x66ef1c).bytes(MovZ {imm16: LOCK_OFFSET as u32, rd: 8, is_64_bit: false }.encode().to_le_bytes()).unwrap();
+
+    // Here we patch all remainining references to lock.
+    for entry in ADD_MOVZ_LOCK {
+        unsafe {
+            let movz_instr = (getRegionAddress(Region::Text) as usize + entry - 4) as *const u32;
+            let mut movz = MovZ::decode(*movz_instr);
+            movz.imm16 = LOCK_OFFSET as u32;
+
+            Patch::in_text(entry).bytes(movz.encode().to_le_bytes()).unwrap();
+        }
+    }
+
+    // Here, we patch all remaining references to entries_2.
     for entry in LDRSW_ENTRIES_2 {
         unsafe {
             let ldrsw_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             if let Some(mut ldrsw) = LdrswPostImmediate::decode(*ldrsw_instr) {
-                ldrsw.imm9 = ldrsw.imm9 - 0x14F0 + entries_2_offset;
-                // Need to use sky_memcpy instead of write
+                ldrsw.imm9 = ldrsw.imm9 - 0x14F0 + (ENTRIES_2_OFFSET as u16);
+
                 Patch::in_text(entry).bytes(ldrsw.encode().to_le_bytes()).unwrap();
             } else {
                 println!("Failed to decode LDRSW!: {:#x}, {:#x}", entry, *ldrsw_instr);
