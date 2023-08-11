@@ -145,6 +145,14 @@ pub unsafe fn some_iter3(ctx: &mut InlineCtx) {
 
 // Offset of entries_2 in our new struct.
 const ENTRIES_2_OFFSET: usize = 0x3860;
+// Offset of unk in our new struct.
+const UNK_OFFSET: usize = 0x4460;
+// Offset of unk_ref_count in our new struct.
+const UNK_REF_COUNT_OFFSET: usize = 0x4470;
+// Offset of unk2 in our new struct.
+const UNK2_OFFSET: usize = 0x4478;
+// Offset of unk2_ref_count in our new struct.
+const UNK2_REF_COUNT_OFFSET: usize = 0x4488;
 // Offset of lock in our new struct.
 const LOCK_OFFSET: usize = 0x4490;
 
@@ -192,6 +200,83 @@ pub fn install() {
             } else {
                 println!("Failed to decode LDRSW!: {:#x}, {:#x}", entry, *ldrsw_instr);
             }
+        }
+    }
+
+    // Here, we patch all references to unk.
+    for entry in LDR_UNK {
+        unsafe {
+            let ldr_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
+            let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
+            ldr.imm12 = ldr.imm12 - 0x1958 + (UNK_OFFSET as u16);
+
+            Patch::in_text(entry).bytes(ldr.encode().to_le_bytes()).unwrap();
+        }
+    }
+    for entry in STR_UNK {
+        unsafe {
+            let str_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
+            let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
+            str.imm12 = str.imm12 - 0x1958 + (UNK_OFFSET as u16);
+
+            Patch::in_text(entry).bytes(str.encode().to_le_bytes()).unwrap();
+        }
+    }
+    // Here, we patch all references to unk_ref_count.
+    for entry in LDR_UNK_REF_COUNT {
+        unsafe {
+            let ldr_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
+            let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
+            ldr.imm12 = ldr.imm12 - 0x1968 + (UNK_REF_COUNT_OFFSET as u16);
+
+            Patch::in_text(entry).bytes(ldr.encode().to_le_bytes()).unwrap();
+        }
+    }
+    for entry in STR_UNK_REF_COUNT {
+        unsafe {
+            let str_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
+            let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
+            str.imm12 = str.imm12 - 0x1968 + (UNK_REF_COUNT_OFFSET as u16);
+
+            Patch::in_text(entry).bytes(str.encode().to_le_bytes()).unwrap();
+        }
+    }
+    // Here, we patch all references to unk2.
+    for entry in LDR_UNK2 {
+        unsafe {
+            let ldr_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
+            let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
+            ldr.imm12 = ldr.imm12 - 0x1970 + (UNK2_OFFSET as u16);
+
+            Patch::in_text(entry).bytes(ldr.encode().to_le_bytes()).unwrap();
+        }
+    }
+    for entry in STR_UNK2 {
+        unsafe {
+            let str_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
+            let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
+            str.imm12 = str.imm12 - 0x1970 + (UNK2_OFFSET as u16);
+
+            Patch::in_text(entry).bytes(str.encode().to_le_bytes()).unwrap();
+        }
+    }
+    // Here, we patch all references to unk2_ref_count.
+    for entry in LDR_UNK2_REF_COUNT {
+        unsafe {
+            let ldr_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
+            let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
+            ldr.imm12 = ldr.imm12 - 0x1980 + (UNK2_REF_COUNT_OFFSET as u16);
+
+            Patch::in_text(entry).bytes(ldr.encode().to_le_bytes()).unwrap();
+        }
+    }
+    for entry in STR_UNK2_REF_COUNT {
+        unsafe {
+            let str_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
+            let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
+            str.imm12 = str.imm12 - 0x1980 + (UNK2_REF_COUNT_OFFSET as u16);
+
+            Patch::in_text(entry).bytes(str.encode().to_le_bytes()).unwrap();
         }
     }
 }
