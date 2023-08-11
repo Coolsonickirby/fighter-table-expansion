@@ -20,7 +20,7 @@ pub struct FighterParamAccessor2Ex {
     pub lock: cpp::Mutex, // std::recursive_mutex
 }
 
-// References to FighterParamAccessor2::unk via LdrImmediate
+// References to FighterParamAccessor2::unk via LdrRegisterImmediate
 static LDR_UNK: [usize; 10] = [
     0x070a8d8,
     0x0709aa4,
@@ -34,7 +34,7 @@ static LDR_UNK: [usize; 10] = [
     0x34cf9a4,
 ];
 
-// References to FighterParamAccessor2::unk via StrImmediate
+// References to FighterParamAccessor2::unk via StrRegisterImmediate
 static STR_UNK: [usize; 4] = [
     0x70a8dc,
     0x70a8e0,
@@ -42,19 +42,19 @@ static STR_UNK: [usize; 4] = [
     0x652ef8,
 ];
 
-// References to FighterParamAccessor2::unk_ref_count via LdrImmediate
+// References to FighterParamAccessor2::unk_ref_count via LdrRegisterImmediate
 static LDR_UNK_REF_COUNT: [usize; 1] = [
     0x652edc,
 ];
 
-// References to FighterParamAccessor2::unk_ref_count via StrImmediate
+// References to FighterParamAccessor2::unk_ref_count via StrRegisterImmediate
 static STR_UNK_REF_COUNT: [usize; 3] = [
     0x652ee8,
     0x70a91c,
     0x652f30,
 ];
 
-// References to FighterParamAccessor2::unk2 via LdrImmediate
+// References to FighterParamAccessor2::unk2 via LdrRegisterImmediate
 static LDR_UNK2: [usize; 6] = [
     0x70a918,
     0x721b3c,
@@ -64,7 +64,7 @@ static LDR_UNK2: [usize; 6] = [
     0x721afc,
 ];
 
-// References to FighterParamAccessor2::unk2 via StrImmediate
+// References to FighterParamAccessor2::unk2 via StrRegisterImmediate
 static STR_UNK2: [usize; 10] = [
     0x721b04,
     0x721b00,
@@ -78,7 +78,7 @@ static STR_UNK2: [usize; 10] = [
     0x6530b0,
 ];
 
-// References to FighterParamAccessor2::unk_ref_count via LdrImmediate
+// References to FighterParamAccessor2::unk_ref_count via LdrRegisterImmediate
 static LDR_UNK2_REF_COUNT: [usize; 4] = [
     0x721a3c,
     0x721b48,
@@ -86,7 +86,7 @@ static LDR_UNK2_REF_COUNT: [usize; 4] = [
     0x653094,
 ];
 
-// References to FighterParamAccessor2::unk_ref_count via StrImmediate
+// References to FighterParamAccessor2::unk_ref_count via StrRegisterImmediate
 static STR_UNK2_REF_COUNT: [usize; 7] = [
     0x721b50,
     0x651214,
@@ -108,7 +108,7 @@ static ADD_MOVZ_LOCK: [usize; 5] = [
     0x607b24,
 ];
 
-// References to FighterParamAccessor2::entries_2 via a LdrswImmediate.
+// References to FighterParamAccessor2::entries_2 via a LdrswPostImmediate.
 static LDRSW_ENTRIES_2: [usize; 9] = [
     0x34b1b4,
     0x85ae04,
@@ -141,6 +141,21 @@ pub unsafe fn some_iter3(ctx: &mut InlineCtx) {
     let ptr = *ctx.registers[15].x.as_ref() as usize;
     let w = *ctx.registers[16].w.as_ref() as u32;
     *((ptr + ENTRIES_2_OFFSET + 4) as *mut u32) = w;
+}
+
+#[hook(offset = 0x66ef48, inline)]
+pub unsafe fn init_entries(ctx: &mut InlineCtx) {
+    let table = *ctx.registers[20].x.as_ref() as *mut FighterParamAccessor2Ex;
+    println!("[fpa2::init_entries] Instance: {:#x}", table as usize);
+    for entry in (*table).entries.iter_mut() {
+        entry.unk1 = 0;
+        entry.unk2 = 0;
+        entry.unk3.vtable = (getRegionAddress(Region::Text) as *const ()).byte_offset(0x4f88b50);
+        entry.unk4.vtable = (getRegionAddress(Region::Text) as *const ()).byte_offset(0x4f88b70);
+        entry.unk3.unk = cpp::SharedPtr::null();
+        entry.unk4.unk = cpp::SharedPtr::null();
+    }
+    (*table).entries_2.fill(FPA2Entry2 { unk1: 0, unk2: 0, unk3: 0 });
 }
 
 // Offset of entries_2 in our new struct.
