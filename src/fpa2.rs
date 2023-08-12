@@ -6,6 +6,7 @@ use smash::{cpp, app::*, lib};
 use crate::cpu::*;
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct FighterParamAccessor2Ex {
     pub fighter_param: cpp::SharedPtr<FighterParam>,
     pub fighter_param_motion: cpp::SharedPtr<lib::ParameterReceiver>, 
@@ -13,8 +14,8 @@ pub struct FighterParamAccessor2Ex {
     pub spirits: cpp::SharedPtr<lib::ParameterReceiver>,
     pub amiibo: cpp::SharedPtr<lib::ParameterReceiver>,
     pub the_other_prcs: cpp::SharedPtr<()>,
-    pub entries: [FPA2Entry; 256],
-    pub entries_2: [FPA2Entry2; 256],
+    pub entries: [FPA2Entry; 94],
+    pub entries_2: [FPA2Entry2; 94],
     pub unk: cpp::SharedPtr<()>,
     pub unk_ref_count: u32, // NOT an atomic
     pub unk2: cpp::SharedPtr<lib::ParameterReceiver>,
@@ -131,16 +132,18 @@ static STR_ENTRIES_2: [usize; 3] = [
 #[hook(offset = 0x66ef48, inline)]
 pub unsafe fn init_entries(ctx: &mut InlineCtx) {
     let table = *ctx.registers[20].x.as_ref() as *mut FighterParamAccessor2Ex;
+    std::fs::write("sd:/pre_dump.txt", format!("{:#?}", *table));
     println!("[fpa2::init_entries] Instance: {:#x}", table as usize);
     println!("[fpa2::init_entries] Please look: {:#x}", table as usize + ENTRIES_2_OFFSET + 0x58 * std::mem::size_of::<FPA2Entry2>());
     println!("[fpa2::init_entries] Original Unk: {:#x}", table as usize + 0x1958);
     println!("[fpa2::init_entries] Original UnkRefCount: {:#x}", table as usize + 0x1968);
     println!("[fpa2::init_entries] Original Unk2: {:#x}", table as usize + 0x1970);
     println!("[fpa2::init_entries] Original Unk2RefCount: {:#x}", table as usize + 0x1980);
+    println!("[fpa2::init_entries] Original Lock: {:#x}", table as usize + 0x1988);
     std::thread::sleep(Duration::from_secs(5));
     for entry in (*table).entries.iter_mut() {
-        entry.unk1 = 0;
-        entry.unk2 = 0;
+        // entry.unk1 = 0;
+        // entry.unk2 = 0;
         entry.unk3.vtable = (getRegionAddress(Region::Text) as *const ()).byte_offset(0x4f88b50);
         entry.unk4.vtable = (getRegionAddress(Region::Text) as *const ()).byte_offset(0x4f88b70);
         entry.unk3.unk = cpp::SharedPtr::null();
@@ -151,20 +154,21 @@ pub unsafe fn init_entries(ctx: &mut InlineCtx) {
     (*table).unk_ref_count = 0;
     (*table).unk2 = cpp::SharedPtr::null();
     (*table).unk2_ref_count = 0;
+    std::fs::write("sd:/post_dump.txt", format!("{:#?}", *table));
 }
 
 // Offset of entries_2 in our new struct.
-const ENTRIES_2_OFFSET: usize = 0x3860;
+const ENTRIES_2_OFFSET: usize = 0x14F0;
 // Offset of unk in our new struct.
-const UNK_OFFSET: usize = 0x4460;
+const UNK_OFFSET: usize = 0x1958;
 // Offset of unk_ref_count in our new struct.
-const UNK_REF_COUNT_OFFSET: usize = 0x4470;
+const UNK_REF_COUNT_OFFSET: usize = 0x1968;
 // Offset of unk2 in our new struct.
-const UNK2_OFFSET: usize = 0x4478;
+const UNK2_OFFSET: usize = 0x1970;
 // Offset of unk2_ref_count in our new struct.
-const UNK2_REF_COUNT_OFFSET: usize = 0x4488;
+const UNK2_REF_COUNT_OFFSET: usize = 0x1980;
 // Offset of lock in our new struct.
-const LOCK_OFFSET: usize = 0x4490;
+const LOCK_OFFSET: usize = 0x1988;
 
 const CLASS_SIZE: usize = std::mem::size_of::<FighterParamAccessor2Ex>();
 
@@ -251,7 +255,8 @@ pub fn install() {
             let ldr_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
             ldr.imm12 = ldr.imm12 - 0x1968 + (UNK_REF_COUNT_OFFSET as u16);
-            ldr.size = 3;
+            //ldr.size = 3;
+
             if let Some(encoded) = ldr.encode() {
                 Patch::in_text(entry).bytes(ldr.encode().unwrap().to_le_bytes()).unwrap();
             } else {
@@ -264,7 +269,7 @@ pub fn install() {
             let str_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
             str.imm12 = str.imm12 - 0x1968 + (UNK_REF_COUNT_OFFSET as u16);
-            str.size = 3;
+            //str.size = 3;
 
             if let Some(encoded) = str.encode() {
                 Patch::in_text(entry).bytes(str.encode().unwrap().to_le_bytes()).unwrap();
@@ -306,7 +311,7 @@ pub fn install() {
             let ldr_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
             ldr.imm12 = ldr.imm12 - 0x1980 + (UNK2_REF_COUNT_OFFSET as u16);
-            ldr.size = 3;
+            //ldr.size = 3;
 
             if let Some(encoded) = ldr.encode() {
                 Patch::in_text(entry).bytes(ldr.encode().unwrap().to_le_bytes()).unwrap();
@@ -320,7 +325,7 @@ pub fn install() {
             let str_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
             str.imm12 = str.imm12 - 0x1980 + (UNK2_REF_COUNT_OFFSET as u16);
-            str.size = 3;
+            //str.size = 3;
 
             if let Some(encoded) = str.encode() {
                 Patch::in_text(entry).bytes(str.encode().unwrap().to_le_bytes()).unwrap();
