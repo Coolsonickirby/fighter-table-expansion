@@ -14,12 +14,12 @@ pub struct FighterParamAccessor2Ex {
     pub spirits: cpp::SharedPtr<lib::ParameterReceiver>,
     pub amiibo: cpp::SharedPtr<lib::ParameterReceiver>,
     pub the_other_prcs: cpp::SharedPtr<()>,
-    pub entries: [FPA2Entry; 94],
-    pub entries_2: [FPA2Entry2; 94],
+    pub entries: [FPA2Entry; 256],
+    pub entries_2: [FPA2Entry2; 256],
     pub unk: cpp::SharedPtr<()>,
-    pub unk_ref_count: u32, // NOT an atomic
+    pub unk_ref_count: u64, // NOT an atomic
     pub unk2: cpp::SharedPtr<lib::ParameterReceiver>,
-    pub unk2_ref_count: u32, // NOT an atomic
+    pub unk2_ref_count: u64, // NOT an atomic
     pub lock: cpp::Mutex, // std::recursive_mutex
 }
 
@@ -110,7 +110,7 @@ static ADD_MOVZ_LOCK: [usize; 5] = [
 ];
 
 // References to FighterParamAccessor2::entries_2 via a LdrswPostImmediate.
-static LDRSW_ENTRIES_2: [usize; 8] = [
+static LDRSW_ENTRIES_2: [usize; 17] = [
     0x34b1b4,
     0x85ae04,
     0x6e1f08,
@@ -120,6 +120,15 @@ static LDRSW_ENTRIES_2: [usize; 8] = [
     0x6e22e0,
     0x6e2520,
     0xf02984,
+    0x720fc0,
+    0x721034,
+    0x721114,
+    0x7213a8,
+    0x72143c,
+    0x7214dc,
+    0x7212ec,
+    0x72124c,
+    0x7211bc,
 ];
 
 // References to FighterParamAccessor2::entries_2 via a StrRegisterImmediate.
@@ -132,7 +141,6 @@ static STR_ENTRIES_2: [usize; 3] = [
 #[hook(offset = 0x66ef48, inline)]
 pub unsafe fn init_entries(ctx: &mut InlineCtx) {
     let table = *ctx.registers[20].x.as_ref() as *mut FighterParamAccessor2Ex;
-    std::fs::write("sd:/pre_dump.txt", format!("{:#?}", *table));
     println!("[fpa2::init_entries] Instance: {:#x}", table as usize);
     println!("[fpa2::init_entries] Please look: {:#x}", table as usize + ENTRIES_2_OFFSET + 0x58 * std::mem::size_of::<FPA2Entry2>());
     println!("[fpa2::init_entries] Original Unk: {:#x}", table as usize + 0x1958);
@@ -154,21 +162,20 @@ pub unsafe fn init_entries(ctx: &mut InlineCtx) {
     (*table).unk_ref_count = 0;
     (*table).unk2 = cpp::SharedPtr::null();
     (*table).unk2_ref_count = 0;
-    std::fs::write("sd:/post_dump.txt", format!("{:#?}", *table));
 }
 
 // Offset of entries_2 in our new struct.
-const ENTRIES_2_OFFSET: usize = 0x14F0;
+const ENTRIES_2_OFFSET: usize = 0x3860;
 // Offset of unk in our new struct.
-const UNK_OFFSET: usize = 0x1958;
+const UNK_OFFSET: usize = 0x4460;
 // Offset of unk_ref_count in our new struct.
-const UNK_REF_COUNT_OFFSET: usize = 0x1968;
+const UNK_REF_COUNT_OFFSET: usize = 0x4470;
 // Offset of unk2 in our new struct.
-const UNK2_OFFSET: usize = 0x1970;
+const UNK2_OFFSET: usize = 0x4478;
 // Offset of unk2_ref_count in our new struct.
-const UNK2_REF_COUNT_OFFSET: usize = 0x1980;
+const UNK2_REF_COUNT_OFFSET: usize = 0x4488;
 // Offset of lock in our new struct.
-const LOCK_OFFSET: usize = 0x1988;
+const LOCK_OFFSET: usize = 0x4490;
 
 const CLASS_SIZE: usize = std::mem::size_of::<FighterParamAccessor2Ex>();
 
