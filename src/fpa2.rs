@@ -195,7 +195,7 @@ pub fn install() {
             let mut movz = MovZ::decode(*movz_instr);
             movz.imm16 = LOCK_OFFSET as u32;
 
-            Patch::in_text(entry).bytes(movz.encode().to_le_bytes()).unwrap();
+            Patch::in_text(entry - 4).bytes(movz.encode().to_le_bytes()).unwrap();
         }
     }
 
