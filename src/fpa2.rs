@@ -288,6 +288,7 @@ pub fn install() {
             Patch::in_text(entry).bytes(str.encode().unwrap().to_le_bytes()).unwrap();
         }
     }
+    Patch::in_text(0x77d114).bytes(LdrRegisterImmediate {imm12: ENTRIES_2_OFFSET as u16, rn: 8, rt: 8, size: 2 }.encode().unwrap().to_le_bytes()).unwrap();
 
     // Here, we patch all references to unk.
     for entry in LDR_UNK {

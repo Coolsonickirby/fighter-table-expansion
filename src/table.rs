@@ -19,7 +19,7 @@ use crate::{
  * - Changed todo! to actual stuff
  */
 
-fn get_text() -> &'static [u8] {
+pub fn get_text() -> &'static [u8] {
     unsafe {
         let ptr = getRegionAddress(Region::Text) as *const u8;
         let size = (getRegionAddress(Region::Rodata) as usize) - (ptr as usize);
@@ -27,7 +27,7 @@ fn get_text() -> &'static [u8] {
     }
 }
 
-fn get_data() -> &'static [u8] {
+pub fn get_data() -> &'static [u8] {
     unsafe {
         let ptr = getRegionAddress(Region::Data) as *const u8;
         let size = (getRegionAddress(Region::Bss) as usize) - (ptr as usize);
@@ -35,7 +35,7 @@ fn get_data() -> &'static [u8] {
     }
 }
 
-fn get_rodata() -> &'static [u8] {
+pub fn get_rodata() -> &'static [u8] {
     unsafe {
         let ptr = getRegionAddress(Region::Rodata) as *const u8;
         let size = (getRegionAddress(Region::Data) as usize) - (ptr as usize);
