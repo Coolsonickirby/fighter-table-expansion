@@ -110,11 +110,14 @@ static ADD_MOVZ_LOCK: [usize; 5] = [
 ];
 
 // References to FighterParamAccessor2::entries_2 via a LdrswPostImmediate.
-static LDRSW_ENTRIES_2: [usize; 17] = [
+static LDRSW_ENTRIES_2: [usize; 43] = [
     0x34b1b4,
     0x85ae04,
     0x6e1f08,
     // 0x266d20,
+    0x686d64,
+    0x686da0,
+    0x6871b0,
     0x6ce8c8,
     0x6d063c,
     0x6e22e0,
@@ -129,6 +132,29 @@ static LDRSW_ENTRIES_2: [usize; 17] = [
     0x7212ec,
     0x72124c,
     0x7211bc,
+    0x77d7f0,
+    0x665218,
+    0x6797b0,
+    0x69052c,
+    0x6c93d8,
+    0x90e928,
+    0xb9f9d4,
+    0xe62434,
+    0x1315f04,
+    0x167aaa8,
+    0x1f99b7c,
+    0x1f99bec,
+    0x1f99c5c,
+    0x1f99ccc,
+    0x1f99d7c,
+    0x22817dc,
+    0x228182c,
+    0x228189c,
+    0x22e6e94,
+    0x33de590,
+    0x34ff224,
+    0x34ffad8,
+    0x3515dd8,
 ];
 
 // References to FighterParamAccessor2::entries_2 via a StrRegisterImmediate.
@@ -157,7 +183,7 @@ pub unsafe fn init_entries(ctx: &mut InlineCtx) {
         entry.unk3.unk = cpp::SharedPtr::null();
         entry.unk4.unk = cpp::SharedPtr::null();
     }
-    (*table).entries_2.fill(FPA2Entry2 { unk1: 0, unk2: 0, unk3: 0 });
+    (*table).entries_2.fill(FPA2Entry2 { fighter_param_index: 0, fighter_param_motion_index: 0, fighter_param_thrown_index: 0 });
     (*table).unk = cpp::SharedPtr::null();
     (*table).unk_ref_count = 0;
     (*table).unk2 = cpp::SharedPtr::null();
@@ -262,7 +288,7 @@ pub fn install() {
             let ldr_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
             ldr.imm12 = ldr.imm12 - 0x1968 + (UNK_REF_COUNT_OFFSET as u16);
-            //ldr.size = 3;
+            ldr.size = 3;
 
             if let Some(encoded) = ldr.encode() {
                 Patch::in_text(entry).bytes(ldr.encode().unwrap().to_le_bytes()).unwrap();
@@ -276,7 +302,7 @@ pub fn install() {
             let str_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
             str.imm12 = str.imm12 - 0x1968 + (UNK_REF_COUNT_OFFSET as u16);
-            //str.size = 3;
+            str.size = 3;
 
             if let Some(encoded) = str.encode() {
                 Patch::in_text(entry).bytes(str.encode().unwrap().to_le_bytes()).unwrap();
@@ -318,7 +344,7 @@ pub fn install() {
             let ldr_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut ldr = LdrRegisterImmediate::decode(*ldr_instr).unwrap();
             ldr.imm12 = ldr.imm12 - 0x1980 + (UNK2_REF_COUNT_OFFSET as u16);
-            //ldr.size = 3;
+            ldr.size = 3;
 
             if let Some(encoded) = ldr.encode() {
                 Patch::in_text(entry).bytes(ldr.encode().unwrap().to_le_bytes()).unwrap();
@@ -332,7 +358,7 @@ pub fn install() {
             let str_instr = (getRegionAddress(Region::Text) as usize + entry) as *const u32;
             let mut str = StrRegisterImmediate::decode(*str_instr).unwrap();
             str.imm12 = str.imm12 - 0x1980 + (UNK2_REF_COUNT_OFFSET as u16);
-            //str.size = 3;
+            str.size = 3;
 
             if let Some(encoded) = str.encode() {
                 Patch::in_text(entry).bytes(str.encode().unwrap().to_le_bytes()).unwrap();
