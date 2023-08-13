@@ -101,9 +101,12 @@ static STR_UNK2_REF_COUNT: [usize; 7] = [
 ];
 
 // References to FighterParamAccessor2::lock via an AddRegister/MovZ pair.
-static ADD_MOVZ_LOCK: [usize; 5] = [
+static ADD_MOVZ_LOCK: [usize; 8] = [
+    0x720e94,
+    0x72156c,
     0x721a28,
     0x6511fc,
+    0x651b74,
     0x653088,
     0x652ed0,
     0x607b24,
