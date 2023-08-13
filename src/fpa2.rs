@@ -16,7 +16,7 @@ pub struct FighterParamAccessor2Ex {
     pub the_other_prcs: cpp::SharedPtr<()>,
     pub entries: [FPA2Entry; 256],
     pub entries_2: [FPA2Entry2; 256],
-    pub unk: cpp::SharedPtr<()>,
+    pub unk: cpp::SharedPtr<lib::ParameterReceiver>,
     pub unk_ref_count: u64, // NOT an atomic
     pub unk2: cpp::SharedPtr<lib::ParameterReceiver>,
     pub unk2_ref_count: u64, // NOT an atomic
@@ -24,37 +24,46 @@ pub struct FighterParamAccessor2Ex {
 }
 
 // References to FighterParamAccessor2::unk via LdrRegisterImmediate
-static LDR_UNK: [usize; 10] = [
-    0x070a8d8,
-    0x0709aa4,
-    0x0709af8,
+static LDR_UNK: [usize; 17] = [
+    0x651b94,
+    0x652ef0,
+    0x709aa4,
+    0x709af8,
+    0x70a8d8,
+    0x7216c8,
+    0x721708,
     0x34cdfc4,
-    0x0652ef0,
     0x34cf99c,
     0x34cdfc8,
     0x34ce1f4,
     0x34ce1fc,
     0x34cf9a4,
+    0x34ca250,
+    0x34ca258,
+    0x34c6b30,
+    0x34c6b38,
 ];
 
 // References to FighterParamAccessor2::unk via StrRegisterImmediate
-static STR_UNK: [usize; 4] = [
+static STR_UNK: [usize; 6] = [
     0x70a8dc,
     0x70a8e0,
+    0x651b98,
+    0x651b9c,
     0x652ef4,
     0x652ef8,
 ];
 
 // References to FighterParamAccessor2::unk_ref_count via LdrRegisterImmediate
 static LDR_UNK_REF_COUNT: [usize; 1] = [
-    0x652edc, // BROKEN
+    0x652edc,
 ];
 
 // References to FighterParamAccessor2::unk_ref_count via StrRegisterImmediate
 static STR_UNK_REF_COUNT: [usize; 3] = [
-    0x652ee8, // BROKEN
-    0x70a91c, // BROKEN
-    0x652f30, // BROKEN
+    0x652ee8,
+    0x70a91c,
+    0x652f30,
 ];
 
 // References to FighterParamAccessor2::unk2 via LdrRegisterImmediate
