@@ -24,7 +24,7 @@ pub struct FighterParamAccessor2Ex {
 }
 
 // References to FighterParamAccessor2::unk via LdrRegisterImmediate
-static LDR_UNK: [usize; 26] = [
+static LDR_UNK: [usize; 28] = [
     0x651b94,
     0x652ef0,
     0x709aa4,
@@ -32,6 +32,8 @@ static LDR_UNK: [usize; 26] = [
     0x70a8d8,
     0x7216c8,
     0x721708,
+    0x22e7a70,
+    0x22e7a7c,
     0x33b5c7c,
     0x33b5c80,
     0x33b6364,
@@ -84,7 +86,7 @@ static STR_UNK_REF_COUNT: [usize; 6] = [
 ];
 
 // References to FighterParamAccessor2::unk2 via LdrRegisterImmediate
-static LDR_UNK2: [usize; 8] = [
+static LDR_UNK2: [usize; 12] = [
     0x70a918,
     0x721b3c,
     0x709a84,
@@ -93,6 +95,10 @@ static LDR_UNK2: [usize; 8] = [
     0x721afc,
     0x33b5cbc,
     0x33b5cc0,
+    0x33f3544,
+    0x33f3550,
+    0x33f43a8,
+    0x33f43ac,
 ];
 
 // References to FighterParamAccessor2::unk2 via StrRegisterImmediate
@@ -140,8 +146,8 @@ static ADD_MOVZ_LOCK: [usize; 8] = [
     0x607b24,
 ];
 
-// References to FighterParamAccessor2::entries_2 via a LdrswPostImmediate.
-static LDRSW_ENTRIES_2: [usize; 67] = [
+// References to FighterParamAccessor2::entries_2 via LdrswPostImmediate.
+static LDRSW_ENTRIES_2: [usize; 75] = [
     0x34b0c8,
     0x34b1b4,
     0x60cf54,
@@ -210,6 +216,14 @@ static LDRSW_ENTRIES_2: [usize; 67] = [
     0x85ae04,
     0x6ce8c8,
     0x6d063c,
+    0xbe8d9c,
+    0xc44a10,
+    0xf126bc,
+    0x1266d20,
+    0x21cadcc,
+    0x3405744,
+    0x34cfbcc,
+    0x34e087c,
 ];
 
 // References to FighterParamAccessor2::entries_2 via a StrRegisterImmediate.
