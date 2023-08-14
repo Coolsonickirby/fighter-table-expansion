@@ -24,7 +24,7 @@ pub struct FighterParamAccessor2Ex {
 }
 
 // References to FighterParamAccessor2::unk via LdrRegisterImmediate
-static LDR_UNK: [usize; 17] = [
+static LDR_UNK: [usize; 26] = [
     0x651b94,
     0x652ef0,
     0x709aa4,
@@ -32,6 +32,15 @@ static LDR_UNK: [usize; 17] = [
     0x70a8d8,
     0x7216c8,
     0x721708,
+    0x33b5c7c,
+    0x33b5c80,
+    0x33b6364,
+    0x34c8f98,
+    0x34c8fa4,
+    0x34ca058,
+    0x34ca064,
+    0x34cd520,
+    0x34cd528,
     0x34cdfc4,
     0x34cf99c,
     0x34cdfc8,
@@ -45,9 +54,11 @@ static LDR_UNK: [usize; 17] = [
 ];
 
 // References to FighterParamAccessor2::unk via StrRegisterImmediate
-static STR_UNK: [usize; 6] = [
+static STR_UNK: [usize; 8] = [
     0x70a8dc,
     0x70a8e0,
+    0x7216cc,
+    0x7216d0,
     0x651b98,
     0x651b9c,
     0x652ef4,
@@ -55,25 +66,33 @@ static STR_UNK: [usize; 6] = [
 ];
 
 // References to FighterParamAccessor2::unk_ref_count via LdrRegisterImmediate
-static LDR_UNK_REF_COUNT: [usize; 1] = [
+static LDR_UNK_REF_COUNT: [usize; 4] = [
     0x652edc,
+    0x651b80,
+    0x721580,
+    0x721714,
 ];
 
 // References to FighterParamAccessor2::unk_ref_count via StrRegisterImmediate
-static STR_UNK_REF_COUNT: [usize; 3] = [
+static STR_UNK_REF_COUNT: [usize; 6] = [
+    0x651b8c,
+    0x651bd4,
     0x652ee8,
     0x70a91c,
+    0x72171c,
     0x652f30,
 ];
 
 // References to FighterParamAccessor2::unk2 via LdrRegisterImmediate
-static LDR_UNK2: [usize; 6] = [
+static LDR_UNK2: [usize; 8] = [
     0x70a918,
     0x721b3c,
     0x709a84,
     0x65121c,
     0x6530a8,
     0x721afc,
+    0x33b5cbc,
+    0x33b5cc0,
 ];
 
 // References to FighterParamAccessor2::unk2 via StrRegisterImmediate
@@ -122,7 +141,7 @@ static ADD_MOVZ_LOCK: [usize; 8] = [
 ];
 
 // References to FighterParamAccessor2::entries_2 via a LdrswPostImmediate.
-static LDRSW_ENTRIES_2: [usize; 65] = [
+static LDRSW_ENTRIES_2: [usize; 67] = [
     0x34b0c8,
     0x34b1b4,
     0x60cf54,
@@ -182,10 +201,12 @@ static LDRSW_ENTRIES_2: [usize; 65] = [
     0x228189c,
     0x22e6e94,
     0x33de590,
+    0x34c8cdc,
+    0x34c8d0c,
     0x34ff224,
     0x34ffad8,
     0x3515dd8,
-    
+
     0x85ae04,
     0x6ce8c8,
     0x6d063c,
