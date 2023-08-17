@@ -1,4 +1,4 @@
-pub const FIGHTER_SIZE: usize = 0x75;
+pub const FIGHTER_SIZE: usize = 0x76;
 
 pub static mut ACTUAL_FIGHTER_SIZE: usize = 0x5E;
 
